@@ -23,6 +23,8 @@ export const workflow = new Workflow({
     productReference: new Scrape(".products #box-product-grid .product-reference span", "innerHTML", processReference),
     productInfoKey: new Scrape("dt.name", "innerHTML", identity),
     productInfoValue: new Scrape("dd.value", "innerHTML", identity),
+    getPageCount: new Scrape(".page-list li a", "innerHTML", (str: string) => Number.parseInt(str)),
+    generateNthPageUrl: (url: string, n: number) => url.concat(`?page=${n}`)
 });
 
 

@@ -13,6 +13,8 @@ export interface WorkflowConfig {
     productReference: Scrape<string>;
     productInfoKey: Scrape<string>;
     productInfoValue: Scrape<string>;
+    getPageCount: Scrape<number>;
+    generateNthPageUrl: (baseUrl: string, n: number) => string;
     categories: Map<string, string>;
 }
 
@@ -21,6 +23,8 @@ export class Workflow implements Instruction<Offer[]> {
     categories: Map<Category, string>;
     provider: Provider;
     scrapeOffers: ScrapeOffers;
+    getPageCount: Scrape<number>;
+    generateNthPageUrl: (baseUrl: string, n: number) => string;
 
 
     constructor(workflowConfig: WorkflowConfig) {
@@ -45,13 +49,23 @@ export class Workflow implements Instruction<Offer[]> {
             scrapeReferences: workflowConfig.productReference,
             scrapeProductInfo: scrapeProductInfo,
         });
+
+        this.getPageCount = workflowConfig.getPageCount;
+        this.generateNthPageUrl = workflowConfig.generateNthPageUrl;
     }
 
     async accept(browser: Browser): Promise<Offer[]> {
         const getCategories: GetCategory[] = [];
 
         this.categories.forEach((url, category) => {
-            getCategories.push(new GetCategory(url, new ScrapeCategory(category, this.scrapeOffers)));
+            getCategories.push(
+                new GetCategory(
+                    url,
+                    new ScrapeCategory(category, this.scrapeOffers),
+                    this.getPageCount,
+                    this.generateNthPageUrl
+                )
+            );
         });
 
         const scrapeProvider = new ScrapeProvider(this.provider, ...getCategories);

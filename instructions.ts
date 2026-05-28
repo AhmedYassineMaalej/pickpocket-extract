@@ -197,16 +197,41 @@ export class ScrapeCategory implements Instruction<OfferBuilder[]> {
 export class GetCategory implements Instruction<OfferBuilder[]> {
     url: string;
     scrapeCategory: ScrapeCategory;
+    getPageCount: Scrape<number>;
+    generateNthPageUrl: (baseUrl: string, n: number) => string;
 
 
-    constructor(url: string, scrapeCategory: ScrapeCategory) {
+
+    constructor(
+        url: string,
+        scrapeCategory: ScrapeCategory,
+        getPageCount: Scrape<number>,
+        generateNthPageUrl: (baseUrl: string, n: number) => string
+    ) {
         this.url = url
         this.scrapeCategory = scrapeCategory
+        this.generateNthPageUrl = generateNthPageUrl;
+        this.getPageCount = getPageCount;
     }
 
     async accept(browser: Browser): Promise<OfferBuilder[]> {
         await browser.execute(new GotoURL(this.url))
-        const offers = await browser.execute(this.scrapeCategory)
+        let offers: OfferBuilder[] = [];
+
+        let pageCount = (await browser.execute(this.getPageCount)).at(-2);
+
+        if (pageCount === undefined) {
+            // single page
+            pageCount = 1;
+        }
+
+        for (let pageIdx = 1; pageIdx <= pageCount; pageIdx++) {
+            const url = this.generateNthPageUrl(this.url, pageIdx);
+            await browser.execute(new GotoURL(url))
+            const pageOffers = await browser.execute(this.scrapeCategory)
+            offers = offers.concat(pageOffers);
+        }
+
         return offers
     }
 }

@@ -15,7 +15,7 @@ const offers = await browser.execute(workflow);
 const offerRepository = new OfferRepository();
 
 for (const offer of offers) {
-    await offerRepository.add(offer);
+    offerRepository.add(offer)
 }
 
 pool.end()
